@@ -34,18 +34,6 @@ def get_Landmarks(X, p, method="random"):
         kmeans_model=KMeans(n_clusters=p).fit(X)
         return kmeans_model.cluster_centers_
 
-#Test get_Landmarks
-test1=False
-if test1:
-    X,y=make_blobs(centers=2, random_state=42)
-
-    landmarks_rand=get_Landmarks(X,2)
-    print(landmarks_rand)
-
-    landmarks_kmeans=get_Landmarks(X,2,"KMeans")
-    print(landmarks_kmeans)
-    find_p(X)
-
 #Compute Zhat
 def gaussian_kernel(dist_mat, bandwidth):
     return np.exp(-dist_mat / (2*bandwidth**2))
@@ -65,5 +53,30 @@ def compose_Sparse_ZHat_Matrix(X, landmarks, bandwidth, r):
     #May be wrong    
     diagm=np.sum(Zhat, axis=0)**(-1/2)
     return diagm*Zhat
+
+def LSC_Clustering(X, n_clusters, n_landmarks, method, non_zero_landmark_weights, bandwidth):
+    landmarks = get_Landmarks(X, n_landmarks, method)
+    Zhat = compose_Sparse_ZHat_Matrix(X, landmarks, bandwidth, non_zero_landmark_weights)
+    svd_result = np.linalg.svd(Zhat, full_matrices=False)[0]
+    clustering_result = KMeans(n_clusters=n_clusters).fit(svd_result)
+    return clustering_result
+#Test get_Landmarks
+test1=False
 if test1:
+    X,y=make_blobs(centers=2, random_state=42)
+
+    landmarks_rand=get_Landmarks(X,2)
+    print(landmarks_rand)
+
+    landmarks_kmeans=get_Landmarks(X,2,"KMeans")
+    print(landmarks_kmeans)
+    find_p(X)
     print(compose_Sparse_ZHat_Matrix(X, landmarks_kmeans, 1, 5))
+
+test2=True
+if test2:
+    X,y=make_blobs(centers=2, random_state=42)
+    labels=LSC_Clustering(X, 2, 4, "Kmeans", 4, 0.5).labels_
+    
+    plt.scatter(X[:,0],X[:,1], c=labels)
+    plt.show()
